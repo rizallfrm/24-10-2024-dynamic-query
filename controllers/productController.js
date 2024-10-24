@@ -1,3 +1,4 @@
+const { Op, where } = require("sequelize");
 const { Products, Shops } = require("../models");
 
 const createProduct = async (req, res) => {
@@ -49,6 +50,15 @@ const createProduct = async (req, res) => {
 
 const getAllProduct = async (req, res) => {
   try {
+    // get query parameter from request
+    const { productName, stock, price } = req.query;
+
+    const condition = {};
+    if (productName) condition.name ={ [Op.iLike]: `%${productName}%` };
+    if (stock) condition.stock = parseInt(stock);;
+    if (price) condition.price = parseInt(price);;
+    console.log('Condition: ', condition)
+
     const products = await Products.findAll({
       include: [
         {
@@ -56,6 +66,7 @@ const getAllProduct = async (req, res) => {
           as: "shop",
         },
       ],
+      where: condition,logging: console.log
     });
 
     res.status(200).json({

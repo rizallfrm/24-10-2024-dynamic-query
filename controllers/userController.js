@@ -1,8 +1,21 @@
+const { Op, where } = require("sequelize");
 const { Users } = require("../models");
 
 const findUsers = async (req, res, next) => {
   try {
-    const users = await Users.findAll();
+    // get query parameter from request
+    const { userName, roleUser, ageUser, addressUser } = req.query;
+
+    const condition = {};
+    if (userName) condition.name = { [Op.iLike]: `%${userName}%` };
+    if (roleUser) condition.role = { [Op.iLike]: `%${roleUser}%` };
+    if (ageUser) condition.age = ageUser;
+    if (addressUser) condition.address = { [Op.iLike]: `%${addressUser}%` };
+
+    // Query to find users with dynamic conditions
+    const users = await Users.findAll({
+      where: condition,
+    });
 
     res.status(200).json({
       status: "Success",
