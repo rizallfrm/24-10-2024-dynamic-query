@@ -50,7 +50,14 @@ const createShop = async (req, res) => {
 const getAllShop = async (req, res) => {
   try {
     // kita jaga request query nya biar gak kemana2
-    const { shopName, adminEmail, productName, stock } = req.query;
+    const {
+      shopName,
+      adminEmail,
+      productName,
+      stock,
+      page = 1,
+      limit = 5,
+    } = req.query;
 
     const condition = {};
     if (shopName) condition.name = { [Op.iLike]: `%${shopName}%` };
@@ -58,6 +65,9 @@ const getAllShop = async (req, res) => {
     const productCondition = {};
     if (productName) productCondition.name = { [Op.iLike]: `%${productName}%` };
     if (stock) productCondition.stock = stock;
+
+    // calculate offset for pagination
+    const offset = (page - 1) * limit;
 
     const shops = await Shops.findAll({
       include: [
@@ -75,7 +85,12 @@ const getAllShop = async (req, res) => {
       ],
       attributes: ["name", "adminEmail"],
       where: condition,
+      limit: parseInt(limit),
+      offset: offset,
     });
+    
+    // Optionally, you can count total products if needed
+    const totalShops = await Shops.count({ where: condition });
 
     const totalData = shops.length;
 
@@ -86,6 +101,9 @@ const getAllShop = async (req, res) => {
       data: {
         totalData,
         shops,
+        currentPage: page,
+        totalPage: Math.ceil(totalShops/limit),
+        totalShops
       },
     });
   } catch (error) {
