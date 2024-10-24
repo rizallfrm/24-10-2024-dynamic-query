@@ -51,13 +51,15 @@ const createProduct = async (req, res) => {
 const getAllProduct = async (req, res) => {
   try {
     // get query parameter from request
-    const { productName, stock, price } = req.query;
+    const { productName, stock, price, page = 1, limit = 10 } = req.query;
 
     const condition = {};
-    if (productName) condition.name ={ [Op.iLike]: `%${productName}%` };
-    if (stock) condition.stock = parseInt(stock);;
-    if (price) condition.price = parseInt(price);;
-    console.log('Condition: ', condition)
+    if (productName) condition.name = { [Op.iLike]: `%${productName}%` };
+    if (stock) condition.stock = parseInt(stock);
+    if (price) condition.price = parseInt(price);
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
 
     const products = await Products.findAll({
       include: [
@@ -66,8 +68,13 @@ const getAllProduct = async (req, res) => {
           as: "shop",
         },
       ],
-      where: condition,logging: console.log
+      where: condition,
+      limit: parseInt(limit),
+      offset: offset,
     });
+
+    // Optionally, you can count total products if needed
+    const totalProducts = await Products.count({ where: condition });
 
     res.status(200).json({
       status: "Success",
@@ -75,6 +82,9 @@ const getAllProduct = async (req, res) => {
       isSuccess: true,
       data: {
         products,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalProducts / limit),
+        totalProducts
       },
     });
   } catch (error) {
